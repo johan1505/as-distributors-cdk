@@ -15,6 +15,7 @@ export class StaticSiteStack extends cdk.Stack {
 
     // S3 Bucket - Private, no public access
     this.websiteBucket = new s3.Bucket(this, "WebsiteBucket", {
+      bucketName: "a-and-s-distributors",
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -48,19 +49,23 @@ function handler(event) {
 }
       `),
         runtime: cloudfront.FunctionRuntime.JS_2_0,
-      }
+      },
     );
 
     // Cache Policy for HTML files - 1 month TTL
-    const htmlCachePolicy = new cloudfront.CachePolicy(this, "HtmlCachePolicy", {
-      cachePolicyName: `${id}-HTML`,
-      comment: "Cache policy for HTML files - 1 month TTL",
-      defaultTtl: cdk.Duration.days(30),
-      minTtl: cdk.Duration.seconds(1),
-      maxTtl: cdk.Duration.days(365),
-      enableAcceptEncodingGzip: true,
-      enableAcceptEncodingBrotli: true,
-    });
+    const htmlCachePolicy = new cloudfront.CachePolicy(
+      this,
+      "HtmlCachePolicy",
+      {
+        cachePolicyName: `${id}-HTML`,
+        comment: "Cache policy for HTML files - 1 month TTL",
+        defaultTtl: cdk.Duration.days(30),
+        minTtl: cdk.Duration.seconds(1),
+        maxTtl: cdk.Duration.days(365),
+        enableAcceptEncodingGzip: true,
+        enableAcceptEncodingBrotli: true,
+      },
+    );
 
     // Cache Policy for immutable assets - 1 year TTL
     const immutableCachePolicy = new cloudfront.CachePolicy(
@@ -74,7 +79,7 @@ function handler(event) {
         maxTtl: cdk.Duration.days(365),
         enableAcceptEncodingGzip: true,
         enableAcceptEncodingBrotli: true,
-      }
+      },
     );
 
     // Response Headers Policy for HTML - no-cache (browser always revalidates)
@@ -93,7 +98,7 @@ function handler(event) {
             },
           ],
         },
-      }
+      },
     );
 
     // Response Headers Policy for immutable assets - 1 year cache
@@ -112,19 +117,18 @@ function handler(event) {
             },
           ],
         },
-      }
+      },
     );
 
     // S3 Origin with OAC
     const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(
-      this.websiteBucket
+      this.websiteBucket,
     );
 
     // CloudFront Distribution
     this.distribution = new cloudfront.Distribution(this, "Distribution", {
       comment: "AS Distributors Static Site",
       defaultRootObject: "index.html",
-
       // Default behavior for HTML/general content
       defaultBehavior: {
         origin: s3Origin,
@@ -178,29 +182,16 @@ function handler(event) {
       enableIpv6: true,
     });
 
-    // Deployment for HTML and non-hashed files
-    new s3deploy.BucketDeployment(this, "DeployHtmlFiles", {
+    // Deploy all static files to S3
+    new s3deploy.BucketDeployment(this, "DeployWebsite", {
       sources: [
-        s3deploy.Source.asset(path.join(__dirname, "../../frontend/out"), {
-          exclude: ["_next/**"],
-        }),
+        s3deploy.Source.asset(path.join(__dirname, "../../frontend/out")),
       ],
       destinationBucket: this.websiteBucket,
-      prune: false,
+      prune: true,
       memoryLimit: 512,
       distribution: this.distribution,
-      distributionPaths: ["/", "/index.html", "/404.html", "/en/*", "/sitemap.xml"],
-    });
-
-    // Deployment for static assets
-    new s3deploy.BucketDeployment(this, "DeployStaticAssets", {
-      sources: [
-        s3deploy.Source.asset(path.join(__dirname, "../../frontend/out/_next")),
-      ],
-      destinationBucket: this.websiteBucket,
-      destinationKeyPrefix: "_next",
-      prune: false,
-      memoryLimit: 512,
+      distributionPaths: ["/*"],
     });
 
     // Outputs
