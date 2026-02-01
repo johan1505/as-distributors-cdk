@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
-import { StaticSiteStack } from "../lib/static-site-stack";
+import { QuoteRequestStack } from "../lib/quote-request-stack";
+import env from "../lib/env";
 
 const app = new cdk.App();
 
-new StaticSiteStack(app, "AsDistributorsStaticSite", {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
-  description: "AS Distributors static website hosted on S3 + CloudFront",
-});
+new QuoteRequestStack(app, "AsDistributorsQuoteRequest", {
+    env: {
+      account: env?.CDK_DEFAULT_ACCOUNT,
+      region: env?.CDK_DEFAULT_REGION,
+    },
+    description: "AS Distributors quote request stack",
+    salesRepEmail: env?.SALES_REP_EMAIL!,
+    senderEmail: env?.SENDER_EMAIL!,
+    allowedOrigins: env?.ALLOWED_ORIGINS ?? [],
+  })
