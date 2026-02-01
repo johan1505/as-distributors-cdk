@@ -38,8 +38,8 @@ function validatePayload(body: QuoteRequestPayload): string[] {
     errors.push("quoteItems cannot be empty");
   } else {
     body.quoteItems.forEach((item, index) => {
-      if (!item.slug) {
-        errors.push(`quoteItems[${index}].slug is required`);
+      if (!item.productName) {
+        errors.push(`quoteItems[${index}].productName is required`);
       }
       if (typeof item.quantity !== "number" || item.quantity < 1) {
         errors.push(`quoteItems[${index}].quantity must be a positive number`);

@@ -19,12 +19,12 @@ const SENDER_EMAIL = getRequiredEnv("SENDER_EMAIL");
 /**
  * Formats the quote items into a readable HTML table
  */
-function formatQuoteItemsHtml(quoteItems: QuoteItem[]): string {
+function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: number): string {
   const rows = quoteItems
     .map(
       (item) => `
     <tr>
-      <td style="padding: 8px; border: 1px solid #ddd;">${item.slug}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">${item.productName}</td>
       <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
     </tr>
   `
@@ -36,12 +36,18 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[]): string {
       <thead>
         <tr style="background-color: #f5f5f5;">
           <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Product</th>
-          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Quantity (Packs)</th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Packs</th>
         </tr>
       </thead>
       <tbody>
         ${rows}
       </tbody>
+       <tfoot>
+        <tr style="background-color: #f5f5f5;">
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;"><strong>Total</strong></th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">${totalPacksRequested}</th>
+        </tr>
+      </tfoot>
     </table>
   `;
 }
@@ -51,7 +57,7 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[]): string {
  */
 function formatQuoteItemsText(quoteItems: QuoteItem[]): string {
   return quoteItems
-    .map((item) => `- ${item.slug}: ${item.quantity} pack(s)`)
+    .map((item) => `- ${item.productName}: ${item.quantity} pack(s)`)
     .join("\n");
 }
 
@@ -90,15 +96,15 @@ function generateEmailContent(quoteRequest: QuoteRequestPayload): {
         </div>
 
         <div class="section">
-          <div class="section-title">Contact Information</div>
+          <div class="section-title">Customer Contact Information</div>
           <div class="info-row"><span class="label">Name:</span> ${contactInfo.name}</div>
           <div class="info-row"><span class="label">Email:</span> <a href="mailto:${contactInfo.email}">${contactInfo.email}</a></div>
           <div class="info-row"><span class="label">Phone:</span> <a href="tel:${contactInfo.phone}">${contactInfo.phone}</a></div>
         </div>
 
         <div class="section">
-          <div class="section-title">Requested Items (${metadata.totalUniqueProducts} products, ${metadata.totalItems} total packs)</div>
-          ${formatQuoteItemsHtml(quoteItems)}
+          <div class="section-title">Requested Items</div>
+          ${formatQuoteItemsHtml(quoteItems, metadata.totalItems)}
         </div>
 
         <div class="section">

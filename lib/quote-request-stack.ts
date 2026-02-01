@@ -57,6 +57,10 @@ visibilityTimeout: cdk.Duration.seconds(SQS_VISIBILITY_TIMEOUT_SECONDS), // 6x L
       identity: ses.Identity.email(props.senderEmail),
     });
 
+    const receipientEmailIdentity = new ses.EmailIdentity(this, "ReceipientEmailIdentity", {
+      identity: ses.Identity.email(props.salesRepEmail),
+    });
+
     // Lambda function to process SQS messages and send emails
     // Using NodejsFunction to automatically bundle dependencies
     const emailProcessorLambda = new NodejsFunction(
@@ -73,8 +77,8 @@ visibilityTimeout: cdk.Duration.seconds(SQS_VISIBILITY_TIMEOUT_SECONDS), // 6x L
           SALES_REP_EMAIL: props.salesRepEmail,
           SENDER_EMAIL: props.senderEmail,
         },
-        // Limit concurrent executions to 10 as requested
-        reservedConcurrentExecutions: 3,
+        // TODO: re-enable this once case is approved
+        // reservedConcurrentExecutions: 3,
         bundling: {
           minify: true,
           sourceMap: true,
@@ -86,7 +90,7 @@ visibilityTimeout: cdk.Duration.seconds(SQS_VISIBILITY_TIMEOUT_SECONDS), // 6x L
     emailProcessorLambda.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ["ses:SendEmail", "ses:SendRawEmail"],
-        resources: [senderEmailIdentity.emailIdentityArn],
+        resources: [senderEmailIdentity.emailIdentityArn, receipientEmailIdentity.emailIdentityArn],
       })
     );
 
