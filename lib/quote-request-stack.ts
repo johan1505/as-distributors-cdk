@@ -78,7 +78,7 @@ visibilityTimeout: cdk.Duration.seconds(SQS_VISIBILITY_TIMEOUT_SECONDS), // 6x L
           SENDER_EMAIL: props.senderEmail,
         },
         // TODO: re-enable this once case is approved
-        // reservedConcurrentExecutions: 3,
+        reservedConcurrentExecutions: 3,
         bundling: {
           minify: true,
           sourceMap: true,
