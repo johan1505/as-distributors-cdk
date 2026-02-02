@@ -161,15 +161,5 @@ visibilityTimeout: cdk.Duration.seconds(SQS_VISIBILITY_TIMEOUT_SECONDS), // 6x L
       value: `${httpApi.url}quote`,
       description: "Quote Request API endpoint",
     });
-
-    new cdk.CfnOutput(this, "QueueUrl", {
-      value: quoteQueue.queueUrl,
-      description: "SQS Queue URL for quote requests",
-    });
-
-    new cdk.CfnOutput(this, "QueueArn", {
-      value: quoteQueue.queueArn,
-      description: "SQS Queue ARN for quote requests",
-    });
   }
 }
