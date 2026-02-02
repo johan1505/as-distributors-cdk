@@ -3,7 +3,7 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
-import type { QuoteRequestPayload } from "../../frontend/components/quote/QuoteRequestForm";
+import type { QuoteRequestPayload } from "./types";
 
 const sqsClient = new SQSClient({});
 

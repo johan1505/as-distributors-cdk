@@ -1,11 +1,10 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import type { SQSEvent } from 'aws-lambda'
-import type { QuoteRequestPayload, QuoteItem } from "../../frontend/components/quote/QuoteRequestForm";
+import type { QuoteRequestPayload, QuoteItem } from "./types";
 
 const sesClient = new SESClient({});
 
 function getRequiredEnv(key: string): string {
-  // @ts-expect-error process types not found
   const value = process.env[key];
   if (!value) {
     throw new Error(`Missing required environment variable: ${key}`);
