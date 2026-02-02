@@ -1,15 +1,15 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import type { SQSEvent } from 'aws-lambda'
+import type { SQSEvent } from "aws-lambda";
 import type { QuoteRequestPayload, QuoteItem } from "./types";
 
 const sesClient = new SESClient({});
 
 function getRequiredEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
+	const value = process.env[key];
+	if (!value) {
+		throw new Error(`Missing required environment variable: ${key}`);
+	}
+	return value;
 }
 
 const SALES_REP_EMAIL = getRequiredEnv("SALES_REP_EMAIL");
@@ -19,18 +19,18 @@ const SENDER_EMAIL = getRequiredEnv("SENDER_EMAIL");
  * Formats the quote items into a readable HTML table
  */
 function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: number): string {
-  const rows = quoteItems
-    .map(
-      (item) => `
+	const rows = quoteItems
+		.map(
+			(item) => `
     <tr>
       <td style="padding: 8px; border: 1px solid #ddd;">${item.productName}</td>
       <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
     </tr>
   `
-    )
-    .join("");
+		)
+		.join("");
 
-  return `
+	return `
     <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
       <thead>
         <tr style="background-color: #f5f5f5;">
@@ -55,24 +55,22 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
  * Formats the quote items into plain text
  */
 function formatQuoteItemsText(quoteItems: QuoteItem[]): string {
-  return quoteItems
-    .map((item) => `- ${item.productName}: ${item.quantity} pack(s)`)
-    .join("\n");
+	return quoteItems.map((item) => `- ${item.productName}: ${item.quantity} pack(s)`).join("\n");
 }
 
 /**
  * Generates the email content
  */
 function generateEmailContent(quoteRequest: QuoteRequestPayload): {
-  subject: string;
-  htmlBody: string;
-  textBody: string;
+	subject: string;
+	htmlBody: string;
+	textBody: string;
 } {
-  const { contactInfo, quoteItems, metadata } = quoteRequest;
+	const { contactInfo, quoteItems, metadata } = quoteRequest;
 
-  const subject = `New Quote Request from ${contactInfo.name}`;
+	const subject = `New Quote Request from ${contactInfo.name}`;
 
-  const htmlBody = `
+	const htmlBody = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -120,7 +118,7 @@ function generateEmailContent(quoteRequest: QuoteRequestPayload): {
     </html>
   `;
 
-  const textBody = `
+	const textBody = `
 NEW QUOTE REQUEST
 =================
 
@@ -143,16 +141,16 @@ This is an automated message from A & S Distributors quote request system.
 The customer has agreed to be contacted by a sales representative.
   `.trim();
 
-  return { subject, htmlBody, textBody };
+	return { subject, htmlBody, textBody };
 }
 
 /**
  * Lambda handler for processing SQS messages and sending emails
  */
 export const handler = async (event: SQSEvent): Promise<void> => {
-  console.log("Processing", event.Records.length, "quote request(s)");
+	console.log("Processing", event.Records.length, "quote request(s)");
 
-  /*
+	/*
     Note, this is executing one quote request at a time given batchSize = 1
 
     emailProcessorLambda.addEventSource(
@@ -160,43 +158,43 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       batchSize: 1,
     }))
   */
-  for (const record of event.Records) {
-    try {
-      const quoteRequest: QuoteRequestPayload = JSON.parse(record.body);
+	for (const record of event.Records) {
+		try {
+			const quoteRequest: QuoteRequestPayload = JSON.parse(record.body);
 
-      const { subject, htmlBody, textBody } = generateEmailContent(quoteRequest);
+			const { subject, htmlBody, textBody } = generateEmailContent(quoteRequest);
 
-      const command = new SendEmailCommand({
-        Source: SENDER_EMAIL,
-        Destination: {
-          ToAddresses: [SALES_REP_EMAIL],
-        },
-        ReplyToAddresses: [quoteRequest.contactInfo.email],
-        Message: {
-          Subject: {
-            Data: subject,
-            Charset: "UTF-8",
-          },
-          Body: {
-            Html: {
-              Data: htmlBody,
-              Charset: "UTF-8",
-            },
-            Text: {
-              Data: textBody,
-              Charset: "UTF-8",
-            },
-          },
-        },
-      });
+			const command = new SendEmailCommand({
+				Source: SENDER_EMAIL,
+				Destination: {
+					ToAddresses: [SALES_REP_EMAIL],
+				},
+				ReplyToAddresses: [quoteRequest.contactInfo.email],
+				Message: {
+					Subject: {
+						Data: subject,
+						Charset: "UTF-8",
+					},
+					Body: {
+						Html: {
+							Data: htmlBody,
+							Charset: "UTF-8",
+						},
+						Text: {
+							Data: textBody,
+							Charset: "UTF-8",
+						},
+					},
+				},
+			});
 
-      await sesClient.send(command);
-      console.log("Email sent successfully");
-    } catch (error) {
-      console.error("Error processing record:", error);
-      // Throwing the error will cause the message to be retried
-      // After 3 failures, it will go to the DLQ
-      throw error;
-    }
-  }
+			await sesClient.send(command);
+			console.log("Email sent successfully");
+		} catch (error) {
+			console.error("Error processing record:", error);
+			// Throwing the error will cause the message to be retried
+			// After 3 failures, it will go to the DLQ
+			throw error;
+		}
+	}
 };
