@@ -132,6 +132,7 @@ visibilityTimeout: cdk.Duration.seconds(SQS_VISIBILITY_TIMEOUT_SECONDS), // 6x L
         allowHeaders: ["Content-Type"],
         maxAge: cdk.Duration.days(1),
       },
+  
     });
 
     // Add POST /quote route with Lambda integration
@@ -149,8 +150,8 @@ visibilityTimeout: cdk.Duration.seconds(SQS_VISIBILITY_TIMEOUT_SECONDS), // 6x L
     const stage = httpApi.defaultStage?.node
       .defaultChild as apigateway.CfnStage;
     stage.addPropertyOverride("DefaultRouteSettings", {
-      ThrottlingBurstLimit: 10, // Max concurrent requests
-      ThrottlingRateLimit: 5, // Requests per second
+      ThrottlingBurstLimit: 50, // Max concurrent requests
+      ThrottlingRateLimit: 25, // Requests per second
     });
 
     this.apiUrl = httpApi.url!;
