@@ -48,7 +48,7 @@ frontend:
             commands:
                 - 'npm run deploy'
     artifacts:
-        baseDirectory: /frontend/out
+        baseDirectory: /out
         files:
             - '**/*'
     cache:
@@ -69,12 +69,16 @@ customHeaders:
 `;
 
 		// IAM role for Amplify to use during builds
+		// Include both global and regional service principals
 		const amplifyRole = new iam.Role(this, "AmplifyServiceRole", {
-			assumedBy: new iam.ServicePrincipal("amplify.amazonaws.com"),
+			assumedBy: new iam.CompositePrincipal(
+				new iam.ServicePrincipal("amplify.amazonaws.com"),
+				new iam.ServicePrincipal(`amplify.${this.region}.amazonaws.com`)
+			),
 			description: "Service role for Amplify to build and deploy the frontend",
 		});
 
-		// Add managed policy for Amplify backend deployment
+		// Add managed policy for Amplify Gen 2 backend deployment
 		amplifyRole.addManagedPolicy(
 			iam.ManagedPolicy.fromAwsManagedPolicyName("AdministratorAccess-Amplify")
 		);
