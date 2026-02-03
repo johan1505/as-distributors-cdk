@@ -65,7 +65,7 @@ export class QuoteRequestStack extends cdk.Stack {
 		// Using NodejsFunction to automatically bundle dependencies
 		const emailProcessorLambda = new NodejsFunction(this, "EmailProcessorLambda", {
 			functionName: "as-distributors-quote-email-processor",
-			runtime: Runtime.NODEJS_20_X,
+			runtime: Runtime.NODEJS_LATEST,
 			entry: path.join(__dirname, "../lambda/email-processor.ts"),
 			handler: "handler",
 			timeout: cdk.Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
@@ -101,7 +101,7 @@ export class QuoteRequestStack extends cdk.Stack {
 		// Lambda function to receive API requests and queue them
 		const apiHandlerLambda = new NodejsFunction(this, "ApiHandlerLambda", {
 			functionName: "as-distributors-quote-api-handler",
-			runtime: Runtime.NODEJS_20_X,
+			runtime: Runtime.NODEJS_LATEST,
 			entry: path.join(__dirname, "../lambda/api-handler.ts"),
 			handler: "handler",
 			timeout: cdk.Duration.seconds(10),
