@@ -30,6 +30,11 @@ interface AmplifyStackProps extends cdk.StackProps {
 	 * Will be exposed as NEXT_PUBLIC_QUOTE_API_URL environment variable.
 	 */
 	quoteApiUrl: string;
+
+	/**
+	 * The custom domain name to associate with the Amplify app.
+	 */
+	domainName: string;
 }
 
 export class AmplifyStack extends cdk.Stack {
@@ -107,6 +112,21 @@ customHeaders:
 			branchName: props.githubBranch,
 			enableAutoBuild: true,
 			stage: "PRODUCTION",
+		});
+
+		new amplify.CfnDomain(this, "AmplifyDomain", {
+			appId: this.amplifyApp.attrAppId,
+			domainName: props.domainName,
+			subDomainSettings: [
+				{
+					branchName: this.amplifyBranch.branchName,
+					prefix: "",
+				},
+				{
+					branchName: this.amplifyBranch.branchName,
+					prefix: "www",
+				},
+			],
 		});
 
 		new cdk.CfnOutput(this, "AmplifyAppUrl", {

@@ -23,6 +23,7 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
 		.map(
 			(item) => `
     <tr>
+      <td style="padding: 8px; border: 1px solid #ddd;">${item.itemNumber}</td>
       <td style="padding: 8px; border: 1px solid #ddd;">${item.productName}</td>
       <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
     </tr>
@@ -34,6 +35,7 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
     <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
       <thead>
         <tr style="background-color: #f5f5f5;">
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Item #</th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Product</th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Packs</th>
         </tr>
@@ -43,7 +45,7 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
       </tbody>
        <tfoot>
         <tr style="background-color: #f5f5f5;">
-          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;"><strong>Total</strong></th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;" colspan="2"><strong>Total</strong></th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">${totalPacksRequested}</th>
         </tr>
       </tfoot>
@@ -55,7 +57,9 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
  * Formats the quote items into plain text
  */
 function formatQuoteItemsText(quoteItems: QuoteItem[]): string {
-	return quoteItems.map((item) => `- ${item.productName}: ${item.quantity} pack(s)`).join("\n");
+	return quoteItems
+		.map((item) => `- [${item.itemNumber}] ${item.productName}: ${item.quantity} pack(s)`)
+		.join("\n");
 }
 
 /**

@@ -1,4 +1,4 @@
-export type QuoteItem = { productName: string; quantity: number };
+export type QuoteItem = { productName: string; itemNumber: string; quantity: number };
 
 export interface QuoteRequestPayload {
 	contactInfo: {

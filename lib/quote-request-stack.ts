@@ -8,6 +8,7 @@ import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import type { Construct } from "constructs";
+import type * as route53 from "aws-cdk-lib/aws-route53";
 import * as path from "node:path";
 
 const LAMBDA_TIMEOUT_SECONDS = 30;
@@ -16,15 +17,14 @@ const SQS_VISIBILITY_TIMEOUT_SECONDS = LAMBDA_TIMEOUT_SECONDS * 6;
 interface QuoteRequestStackProps extends cdk.StackProps {
 	/**
 	 * The email address of the sales representative who will receive quote requests.
-	 * This email must be verified in SES.
 	 */
 	salesRepEmail: string;
 
 	/**
-	 * The sender email address for quote notifications.
-	 * This email must be verified in SES.
+	 * The Route 53 hosted zone for the domain.
+	 * Used to create the SES domain identity for sending emails.
 	 */
-	senderEmail: string;
+	hostedZone: route53.IHostedZone;
 
 	/**
 	 * Allowed origins for CORS (e.g., your frontend domain)
@@ -53,9 +53,10 @@ export class QuoteRequestStack extends cdk.Stack {
 			},
 		});
 
-		const senderEmailIdentity = new ses.EmailIdentity(this, "SenderEmailIdentity", {
-			identity: ses.Identity.email(props.senderEmail),
+		const senderEmailIdentity = new ses.EmailIdentity(this, "SesDomainIdentity", {
+			identity: ses.Identity.publicHostedZone(props.hostedZone),
 		});
+		const senderEmail = `noreply@${props.hostedZone.zoneName}`;
 
 		const receipientEmailIdentity = new ses.EmailIdentity(this, "ReceipientEmailIdentity", {
 			identity: ses.Identity.email(props.salesRepEmail),
@@ -72,7 +73,7 @@ export class QuoteRequestStack extends cdk.Stack {
 			memorySize: 256,
 			environment: {
 				SALES_REP_EMAIL: props.salesRepEmail,
-				SENDER_EMAIL: props.senderEmail,
+				SENDER_EMAIL: senderEmail,
 			},
 			// TODO: re-enable this once case is approved
 			reservedConcurrentExecutions: 3,
