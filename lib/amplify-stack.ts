@@ -37,6 +37,8 @@ interface AmplifyStackProps extends cdk.StackProps {
 	domainName: string;
 }
 
+const LOCALES = ["en", "es", "sm", "ko", "zh"];
+
 export class AmplifyStack extends cdk.Stack {
 	public readonly amplifyApp: amplify.CfnApp;
 	public readonly amplifyBranch: amplify.CfnBranch;
@@ -44,6 +46,7 @@ export class AmplifyStack extends cdk.Stack {
 	constructor(scope: Construct, id: string, props: AmplifyStackProps) {
 		super(scope, id, props);
 
+		const immutableValue = "public, max-age=31536000, immutable";
 		// Build spec for Next.js SSG
 		const buildSpec = `
 version: 1
@@ -63,10 +66,14 @@ frontend:
 		// Custom headers for caching. Keep _next assets cached forever in the browser, else don't cache always fetch from CDN
 		const customHeaders = `
 customHeaders:
+  - pattern: "**/*.{webp,svg,ico}"
+    headers:
+      - key: Cache-Control
+        value: ${immutableValue}
   - pattern: _next/**
     headers:
       - key: Cache-Control
-        value: public, max-age=31536000, immutable
+        value: ${immutableValue}
   - pattern: "*"
     headers:
       - key: Cache-Control
@@ -97,6 +104,13 @@ customHeaders:
 			platform: "WEB",
 			buildSpec,
 			customHeaders,
+			customRules: [
+				{ source: "/", target: "/en/home", status: "301" },
+				...LOCALES.flatMap((locale) => [
+					{ source: `/${locale}`, target: `/${locale}/home`, status: "301" },
+					{ source: `/${locale}/`, target: `/${locale}/home`, status: "301" },
+				]),
+			],
 			iamServiceRole: amplifyRole.roleArn,
 			environmentVariables: [
 				{
