@@ -4,7 +4,7 @@ import type { QuoteRequestPayload } from "./types";
 
 const sqsClient = new SQSClient({});
 
-const QUEUE_URL = process.env["QUEUE_URL"];
+const QUEUE_URL = process.env.QUEUE_URL;
 
 /**
  * Validates the quote request payload

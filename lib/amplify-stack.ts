@@ -66,7 +66,7 @@ frontend:
 		// Custom headers for caching. Keep _next assets cached forever in the browser, else don't cache always fetch from CDN
 		const customHeaders = `
 customHeaders:
-  - pattern: "**/*.{webp,svg,ico}"
+  - pattern: "**/*.{webp,svg,ico,WEBP}"
     headers:
       - key: Cache-Control
         value: ${immutableValue}
