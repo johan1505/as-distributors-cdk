@@ -61,8 +61,8 @@ frontend:
             - '**/*'
     cache:
         paths:
-            - frontend/node_modules/**/*
-            - frontend/public/images/nextImageExportOptimizer/**/*
+            - node_modules/**/*
+            - public/images/nextImageExportOptimizer/**/*
 `;
 
 		// Custom headers for caching. Keep _next assets cached forever in the browser, else don't cache always fetch from CDN
