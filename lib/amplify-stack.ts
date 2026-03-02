@@ -64,6 +64,7 @@ frontend:
             - node_modules/**/*
             - .next/cache/**/*
             - public/images/nextImageExportOptimizer/**/*
+            - public/images/next-image-export-optimizer-hashes.json
 `;
 
 		// Custom headers for caching. Keep _next assets cached forever in the browser, else don't cache always fetch from CDN
