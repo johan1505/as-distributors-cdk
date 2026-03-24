@@ -5,6 +5,7 @@ import type { QuoteRequestPayload } from "./types";
 const sqsClient = new SQSClient({});
 
 const QUEUE_URL = process.env.QUEUE_URL;
+const MAX_PACKS_PER_QUOTE_ITEM = 100;
 
 const isZipCodeValid = (zipCode: string): boolean => {
 	return /^[0-9]{5}$/.test(zipCode);
@@ -49,6 +50,8 @@ function validatePayload(body: QuoteRequestPayload): string[] {
 			}
 			if (typeof item.quantity !== "number" || item.quantity < 1) {
 				errors.push(`quoteItems[${index}].quantity must be a positive number`);
+			} else if (item.quantity > MAX_PACKS_PER_QUOTE_ITEM) {
+				errors.push(`quoteItems[${index}].quantity must be ${MAX_PACKS_PER_QUOTE_ITEM} or less`);
 			}
 		});
 	}
