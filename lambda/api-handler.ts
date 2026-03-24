@@ -6,6 +6,9 @@ const sqsClient = new SQSClient({});
 
 const QUEUE_URL = process.env.QUEUE_URL;
 
+const isZipCodeValid = (zipCode: string): boolean => {
+	return /^[0-9]{5}$/.test(zipCode);
+};
 /**
  * Validates the quote request payload
  */
@@ -25,6 +28,13 @@ function validatePayload(body: QuoteRequestPayload): string[] {
 		}
 		if (!body.contactInfo.phone || body.contactInfo.phone.trim() === "") {
 			errors.push("phone is required");
+		}
+		if (
+			!body.contactInfo.zipCode ||
+			body.contactInfo.zipCode.trim() === "" ||
+			!isZipCodeValid(body.contactInfo.zipCode)
+		) {
+			errors.push("zip code is invalid");
 		}
 	}
 

@@ -18,7 +18,7 @@ interface QuoteRequestStackProps extends cdk.StackProps {
 	/**
 	 * The email address of the sales representative who will receive quote requests.
 	 */
-	salesRepEmail: string;
+	saleRepEmails: string[];
 
 	/**
 	 * The Route 53 hosted zone for the domain.
@@ -58,9 +58,12 @@ export class QuoteRequestStack extends cdk.Stack {
 		});
 		const senderEmail = `noreply@${props.hostedZone.zoneName}`;
 
-		const receipientEmailIdentity = new ses.EmailIdentity(this, "ReceipientEmailIdentity", {
-			identity: ses.Identity.email(props.salesRepEmail),
-		});
+		const receipientEmailIdentities = props.saleRepEmails.map(
+			(salesRepEmail, index) =>
+				new ses.EmailIdentity(this, `ReceipientEmailIdentity-${index}`, {
+					identity: ses.Identity.email(salesRepEmail),
+				})
+		);
 
 		// Lambda function to process SQS messages and send emails
 		// Using NodejsFunction to automatically bundle dependencies
@@ -72,10 +75,9 @@ export class QuoteRequestStack extends cdk.Stack {
 			timeout: cdk.Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
 			memorySize: 256,
 			environment: {
-				SALES_REP_EMAIL: props.salesRepEmail,
+				SALE_REP_EMAILS: props.saleRepEmails.join(","),
 				SENDER_EMAIL: senderEmail,
 			},
-			// TODO: re-enable this once case is approved
 			reservedConcurrentExecutions: 3,
 			bundling: {
 				minify: true,
@@ -83,11 +85,15 @@ export class QuoteRequestStack extends cdk.Stack {
 			},
 		});
 
+		const receipientEmailIdentitieArns = receipientEmailIdentities.map(
+			(emailIdentity) => emailIdentity.emailIdentityArn
+		);
+
 		// Grant SES send email permissions to the email processor
 		emailProcessorLambda.addToRolePolicy(
 			new iam.PolicyStatement({
 				actions: ["ses:SendEmail", "ses:SendRawEmail"],
-				resources: [senderEmailIdentity.emailIdentityArn, receipientEmailIdentity.emailIdentityArn],
+				resources: [senderEmailIdentity.emailIdentityArn, ...receipientEmailIdentitieArns],
 			})
 		);
 

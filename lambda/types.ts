@@ -5,6 +5,7 @@ export interface QuoteRequestPayload {
 		name: string;
 		email: string;
 		phone: string;
+		zipCode: string;
 	};
 	quoteItems: QuoteItem[];
 	metadata: {

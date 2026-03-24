@@ -21,7 +21,7 @@ const domainStack = new DomainStack(app, "AsDistributorsDomain", {
 const quoteRequestStack = new QuoteRequestStack(app, "AsDistributorsQuoteRequest", {
 	env: cdkEnv,
 	description: "AS Distributors quote request stack",
-	salesRepEmail: env.SALES_REP_EMAIL,
+	saleRepEmails: env.SALE_REP_EMAILS,
 	allowedOrigins: env.ALLOWED_ORIGINS,
 	hostedZone: domainStack.hostedZone,
 });

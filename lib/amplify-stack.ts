@@ -63,6 +63,7 @@ frontend:
         paths:
             - node_modules/**/*
             - .next/cache/**/*
+            - public/nextImageExportOptimizer/**/*
             - public/images/nextImageExportOptimizer/**/*
             - public/images/next-image-export-optimizer-hashes.json
 `;

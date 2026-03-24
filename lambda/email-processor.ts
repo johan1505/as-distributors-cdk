@@ -12,7 +12,7 @@ function getRequiredEnv(key: string): string {
 	return value;
 }
 
-const SALES_REP_EMAIL = getRequiredEnv("SALES_REP_EMAIL");
+const SALE_REP_EMAILS = getRequiredEnv("SALE_REP_EMAILS").split(",");
 const SENDER_EMAIL = getRequiredEnv("SENDER_EMAIL");
 
 /**
@@ -101,6 +101,7 @@ function generateEmailContent(quoteRequest: QuoteRequestPayload): {
           <div class="info-row"><span class="label">Name:</span> ${contactInfo.name}</div>
           <div class="info-row"><span class="label">Email:</span> <a href="mailto:${contactInfo.email}">${contactInfo.email}</a></div>
           <div class="info-row"><span class="label">Phone:</span> <a href="tel:${contactInfo.phone}">${contactInfo.phone}</a></div>
+          <div class="info-row"><span class="label">Zip code:</span> ${contactInfo.zipCode}</div>
         </div>
 
         <div class="section">
@@ -131,6 +132,7 @@ Contact Information
 Name: ${contactInfo.name}
 Email: ${contactInfo.email}
 Phone: ${contactInfo.phone}
+Zip code: ${contactInfo.zipCode}
 
 Requested Items (${metadata.totalUniqueProducts} products, ${metadata.totalItems} total packs)
 -------------------
@@ -171,7 +173,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
 			const command = new SendEmailCommand({
 				Source: SENDER_EMAIL,
 				Destination: {
-					ToAddresses: [SALES_REP_EMAIL],
+					ToAddresses: SALE_REP_EMAILS,
 				},
 				ReplyToAddresses: [quoteRequest.contactInfo.email],
 				Message: {

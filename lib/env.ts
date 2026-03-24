@@ -13,7 +13,7 @@ interface EnvConfig {
 	DOMAIN_NAME: string;
 
 	// Quote Request Stack Configuration
-	SALES_REP_EMAIL: string;
+	SALE_REP_EMAILS: string[];
 	ALLOWED_ORIGINS: string[];
 
 	// Amplify Stack Configuration
@@ -46,7 +46,7 @@ function loadEnvConfig(): EnvConfig {
 		CDK_DEFAULT_ACCOUNT: getRequiredEnv("CDK_DEFAULT_ACCOUNT"),
 		CDK_DEFAULT_REGION: getRequiredEnv("CDK_DEFAULT_REGION"),
 		DOMAIN_NAME: getRequiredEnv("DOMAIN_NAME"),
-		SALES_REP_EMAIL: getRequiredEnv("SALES_REP_EMAIL"),
+		SALE_REP_EMAILS: parseCommaSeparatedList(getRequiredEnv("SALE_REP_EMAILS")),
 		ALLOWED_ORIGINS: parseCommaSeparatedList(getRequiredEnv("ALLOWED_ORIGINS")),
 		GITHUB_TOKEN: getRequiredEnv("GITHUB_TOKEN"),
 		GITHUB_OWNER: getRequiredEnv("GITHUB_OWNER"),
