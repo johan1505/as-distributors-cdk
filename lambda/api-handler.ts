@@ -6,9 +6,10 @@ const sqsClient = new SQSClient({});
 
 const QUEUE_URL = process.env.QUEUE_URL;
 const MAX_PACKS_PER_QUOTE_ITEM = 100;
+const ZIP_CODE_REGEX = /^[0-9]{5}(?:-?[0-9]{4})?$/;
 
 const isZipCodeValid = (zipCode: string): boolean => {
-	return /^[0-9]{5}$/.test(zipCode);
+	return ZIP_CODE_REGEX.test(zipCode.trim());
 };
 /**
  * Validates the quote request payload
