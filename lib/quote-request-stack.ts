@@ -16,9 +16,9 @@ const SQS_VISIBILITY_TIMEOUT_SECONDS = LAMBDA_TIMEOUT_SECONDS * 6;
 
 interface QuoteRequestStackProps extends cdk.StackProps {
 	/**
-	 * The email address of the sales representative who will receive quote requests.
+	 * Map of sales reps to their configured email addresses.
 	 */
-	saleRepEmails: string[];
+	saleRepEmailMap: Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>>;
 
 	/**
 	 * The Route 53 hosted zone for the domain.
@@ -57,8 +57,9 @@ export class QuoteRequestStack extends cdk.Stack {
 			identity: ses.Identity.publicHostedZone(props.hostedZone),
 		});
 		const senderEmail = `noreply@${props.hostedZone.zoneName}`;
+		const saleRepEmails = [...new Set(Object.values(props.saleRepEmailMap))];
 
-		const receipientEmailIdentities = props.saleRepEmails.map(
+		const receipientEmailIdentities = saleRepEmails.map(
 			(salesRepEmail, index) =>
 				new ses.EmailIdentity(this, `ReceipientEmailIdentity-${index}`, {
 					identity: ses.Identity.email(salesRepEmail),
@@ -75,8 +76,8 @@ export class QuoteRequestStack extends cdk.Stack {
 			timeout: cdk.Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
 			memorySize: 256,
 			environment: {
-				SALE_REP_EMAILS: props.saleRepEmails.join(","),
 				SENDER_EMAIL: senderEmail,
+				SALE_REP_EMAIL_MAP: JSON.stringify(props.saleRepEmailMap),
 			},
 			reservedConcurrentExecutions: 3,
 			bundling: {

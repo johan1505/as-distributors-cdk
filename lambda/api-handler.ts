@@ -1,11 +1,12 @@
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
-import type { QuoteRequestPayload } from "./types";
+import { SALES_REP_OPTIONS, type QuoteRequestPayload } from "./types";
 
 const sqsClient = new SQSClient({});
 
 const QUEUE_URL = process.env.QUEUE_URL;
 const MAX_PACKS_PER_QUOTE_ITEM = 100;
+const MAX_COMPANY_NAME_LENGTH = 200;
 const ZIP_CODE_REGEX = /^[0-9]{5}(?:-?[0-9]{4})?$/;
 
 const isZipCodeValid = (zipCode: string): boolean => {
@@ -23,6 +24,11 @@ function validatePayload(body: QuoteRequestPayload): string[] {
 		if (!body.contactInfo.name || body.contactInfo.name.trim() === "") {
 			errors.push("name is required");
 		}
+		if (!body.contactInfo.companyName || body.contactInfo.companyName.trim() === "") {
+			errors.push("companyName is required");
+		} else if (body.contactInfo.companyName.trim().length > MAX_COMPANY_NAME_LENGTH) {
+			errors.push(`companyName must be ${MAX_COMPANY_NAME_LENGTH} characters or less`);
+		}
 		if (!body.contactInfo.email || body.contactInfo.email.trim() === "") {
 			errors.push("email is required");
 		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.contactInfo.email)) {
@@ -38,6 +44,9 @@ function validatePayload(body: QuoteRequestPayload): string[] {
 		) {
 			errors.push("zip code is invalid");
 		}
+		if (!SALES_REP_OPTIONS.includes(body.contactInfo.salesRep)) {
+			errors.push("salesRep is invalid");
+		}
 	}
 
 	if (!body.quoteItems || !Array.isArray(body.quoteItems)) {
@@ -48,6 +57,9 @@ function validatePayload(body: QuoteRequestPayload): string[] {
 		body.quoteItems.forEach((item, index) => {
 			if (!item.productName) {
 				errors.push(`quoteItems[${index}].productName is required`);
+			}
+			if (!item.overallSize) {
+				errors.push(`quoteItems[${index}].overallSize is required`);
 			}
 			if (typeof item.quantity !== "number" || item.quantity < 1) {
 				errors.push(`quoteItems[${index}].quantity must be a positive number`);

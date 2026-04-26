@@ -1,8 +1,11 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import type { SQSEvent } from "aws-lambda";
-import type { QuoteRequestPayload, QuoteItem } from "./types";
+import type { QuoteRequestPayload, QuoteItem, SalesRepOption } from "./types";
 
 const sesClient = new SESClient({});
+const SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay", "Ajay"] as const;
+type SalesRepEmailKey = (typeof SALES_REP_EMAIL_KEYS)[number];
+const REQUIRED_SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay"] as const;
 
 function getRequiredEnv(key: string): string {
 	const value = process.env[key];
@@ -12,19 +15,92 @@ function getRequiredEnv(key: string): string {
 	return value;
 }
 
-const SALE_REP_EMAILS = getRequiredEnv("SALE_REP_EMAILS").split(",");
 const SENDER_EMAIL = getRequiredEnv("SENDER_EMAIL");
+const SALE_REP_EMAIL_MAP = parseSalesRepEmailMap(getRequiredEnv("SALE_REP_EMAIL_MAP"));
+
+function isSalesRepEmailMap(
+	value: unknown
+): value is Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>> {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return false;
+	}
+
+	for (const salesRep of REQUIRED_SALES_REP_EMAIL_KEYS) {
+		const email = Reflect.get(value, salesRep);
+		if (typeof email !== "string" || email.trim().length === 0) {
+			return false;
+		}
+	}
+
+	const ajayEmail = Reflect.get(value, "Ajay");
+	if (ajayEmail !== undefined && (typeof ajayEmail !== "string" || ajayEmail.trim().length === 0)) {
+		return false;
+	}
+
+	return true;
+}
+
+function parseSalesRepEmailMap(
+	value: string
+): Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>> {
+	let parsed: unknown;
+
+	try {
+		parsed = JSON.parse(value);
+	} catch {
+		throw new Error("Invalid SALE_REP_EMAIL_MAP environment variable. Expected valid JSON.");
+	}
+
+	if (!isSalesRepEmailMap(parsed)) {
+		throw new Error("Invalid SALE_REP_EMAIL_MAP environment variable. Expected a JSON object.");
+	}
+
+	return {
+		Judith: parsed.Judith.trim(),
+		Sanjay: parsed.Sanjay.trim(),
+		...(parsed.Ajay ? { Ajay: parsed.Ajay.trim() } : {}),
+	};
+}
+
+const SALE_REP_DESTINATIONS: Record<SalesRepOption, SalesRepEmailKey[]> = {
+	Judith: ["Judith"],
+	Sanjay: ["Sanjay"],
+	// TODO: Add AJAY once verified
+	Ajay: [/*"Ajay"*/ "Sanjay"],
+	"New customer": ["Judith", "Sanjay"],
+};
+
+function getDestinationEmails(salesRep: SalesRepOption): string[] {
+	return [
+		...new Set(
+			SALE_REP_DESTINATIONS[salesRep]
+				.map((repKey) => SALE_REP_EMAIL_MAP[repKey])
+				.filter((email): email is string => typeof email === "string" && email.length > 0)
+		),
+	];
+}
+
+function formatSelection(item: QuoteItem): string {
+	if (!item.variantLabel || !item.variantValue) {
+		return "Standard";
+	}
+
+	const label = item.variantLabel.charAt(0).toUpperCase() + item.variantLabel.slice(1);
+	return `${label}: ${item.variantValue}`;
+}
 
 /**
  * Formats the quote items into a readable HTML table
  */
-function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: number): string {
+function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalCasesRequested: number): string {
 	const rows = quoteItems
 		.map(
 			(item) => `
     <tr>
       <td style="padding: 8px; border: 1px solid #ddd;">${item.itemNumber}</td>
       <td style="padding: 8px; border: 1px solid #ddd;">${item.productName}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">${item.overallSize}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">${formatSelection(item)}</td>
       <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
     </tr>
   `
@@ -37,7 +113,9 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
         <tr style="background-color: #f5f5f5;">
           <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Item #</th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Product</th>
-          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Packs</th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Size</th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Selection</th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Cases</th>
         </tr>
       </thead>
       <tbody>
@@ -45,8 +123,8 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
       </tbody>
        <tfoot>
         <tr style="background-color: #f5f5f5;">
-          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;" colspan="2"><strong>Total</strong></th>
-          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">${totalPacksRequested}</th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;" colspan="4"><strong>Total</strong></th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">${totalCasesRequested}</th>
         </tr>
       </tfoot>
     </table>
@@ -58,7 +136,12 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalPacksRequested: numb
  */
 function formatQuoteItemsText(quoteItems: QuoteItem[]): string {
 	return quoteItems
-		.map((item) => `- [${item.itemNumber}] ${item.productName}: ${item.quantity} pack(s)`)
+		.map((item) => {
+			const selection = formatSelection(item);
+			return `- [${item.itemNumber}] ${item.productName} (${item.overallSize}${
+				selection === "Standard" ? "" : `, ${selection}`
+			}): ${item.quantity} case(s)`;
+		})
 		.join("\n");
 }
 
@@ -99,9 +182,11 @@ function generateEmailContent(quoteRequest: QuoteRequestPayload): {
         <div class="section">
           <div class="section-title">Customer Contact Information</div>
           <div class="info-row"><span class="label">Name:</span> ${contactInfo.name}</div>
+          <div class="info-row"><span class="label">Company:</span> ${contactInfo.companyName}</div>
           <div class="info-row"><span class="label">Email:</span> <a href="mailto:${contactInfo.email}">${contactInfo.email}</a></div>
           <div class="info-row"><span class="label">Phone:</span> <a href="tel:${contactInfo.phone}">${contactInfo.phone}</a></div>
           <div class="info-row"><span class="label">Zip code:</span> ${contactInfo.zipCode}</div>
+          <div class="info-row"><span class="label">Sales rep:</span> ${contactInfo.salesRep}</div>
         </div>
 
         <div class="section">
@@ -130,11 +215,13 @@ NEW QUOTE REQUEST
 Contact Information
 -------------------
 Name: ${contactInfo.name}
+Company: ${contactInfo.companyName}
 Email: ${contactInfo.email}
 Phone: ${contactInfo.phone}
 Zip code: ${contactInfo.zipCode}
+Sales rep: ${contactInfo.salesRep}
 
-Requested Items (${metadata.totalUniqueProducts} products, ${metadata.totalItems} total packs)
+Requested Items (${metadata.totalUniqueProducts} items, ${metadata.totalItems} total cases)
 -------------------
 ${formatQuoteItemsText(quoteItems)}
 
@@ -169,11 +256,12 @@ export const handler = async (event: SQSEvent): Promise<void> => {
 			const quoteRequest: QuoteRequestPayload = JSON.parse(record.body);
 
 			const { subject, htmlBody, textBody } = generateEmailContent(quoteRequest);
+			const destinationEmails = getDestinationEmails(quoteRequest.contactInfo.salesRep);
 
 			const command = new SendEmailCommand({
 				Source: SENDER_EMAIL,
 				Destination: {
-					ToAddresses: SALE_REP_EMAILS,
+					ToAddresses: destinationEmails,
 				},
 				ReplyToAddresses: [quoteRequest.contactInfo.email],
 				Message: {
