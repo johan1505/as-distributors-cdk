@@ -13,7 +13,7 @@ interface EnvConfig {
 	DOMAIN_NAME: string;
 
 	// Quote Request Stack Configuration
-	SALE_REP_EMAIL_MAP: Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>>;
+	SALE_REP_EMAIL_MAP: Record<"Judith" | "Sanjay" | "Ajay", string>;
 	ALLOWED_ORIGINS: string[];
 
 	// Amplify Stack Configuration
@@ -23,10 +23,7 @@ interface EnvConfig {
 	GITHUB_BRANCH: string;
 }
 
-// TODO: Remove optional Ajay once his email is verified
-// const SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay", "Ajay"] as const;
-// type SalesRepEmailKey = (typeof SALES_REP_EMAIL_KEYS)[number];
-const REQUIRED_SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay"] as const;
+const REQUIRED_SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay", "Ajay"] as const;
 
 function getRequiredEnv(key: string): string {
 	const value = process.env[key];
@@ -46,9 +43,7 @@ function parseCommaSeparatedList(value: string): string[] {
 		.filter((item) => item.length > 0);
 }
 
-function isSalesRepEmailMap(
-	value: unknown
-): value is Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>> {
+function isSalesRepEmailMap(value: unknown): value is Record<"Judith" | "Sanjay" | "Ajay", string> {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		return false;
 	}
@@ -59,18 +54,10 @@ function isSalesRepEmailMap(
 			return false;
 		}
 	}
-
-	const ajayEmail = Reflect.get(value, "Ajay");
-	if (ajayEmail !== undefined && (typeof ajayEmail !== "string" || ajayEmail.trim().length === 0)) {
-		return false;
-	}
-
 	return true;
 }
 
-function parseSalesRepEmailMap(
-	value: string
-): Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>> {
+function parseSalesRepEmailMap(value: string): Record<"Judith" | "Sanjay" | "Ajay", string> {
 	let parsed: unknown;
 
 	try {
@@ -90,7 +77,7 @@ function parseSalesRepEmailMap(
 		// Order matters
 		Sanjay: parsed.Sanjay.trim(), // Email with CDK resource id at index 0
 		Judith: parsed.Judith.trim(), // Email with CDK resource id at index 1
-		...(parsed.Ajay ? { Ajay: parsed.Ajay.trim() } : {}), // to be email with resource id at index 2
+		Ajay: parsed.Ajay.trim(), // Email with CDK resource id at index 2
 	};
 }
 

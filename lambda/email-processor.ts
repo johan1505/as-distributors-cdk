@@ -5,7 +5,7 @@ import type { QuoteRequestPayload, QuoteItem, SalesRepOption } from "./types";
 const sesClient = new SESClient({});
 const SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay", "Ajay"] as const;
 type SalesRepEmailKey = (typeof SALES_REP_EMAIL_KEYS)[number];
-const REQUIRED_SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay"] as const;
+const REQUIRED_SALES_REP_EMAIL_KEYS = ["Judith", "Sanjay", "Ajay"] as const;
 
 function getRequiredEnv(key: string): string {
 	const value = process.env[key];
@@ -18,9 +18,7 @@ function getRequiredEnv(key: string): string {
 const SENDER_EMAIL = getRequiredEnv("SENDER_EMAIL");
 const SALE_REP_EMAIL_MAP = parseSalesRepEmailMap(getRequiredEnv("SALE_REP_EMAIL_MAP"));
 
-function isSalesRepEmailMap(
-	value: unknown
-): value is Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>> {
+function isSalesRepEmailMap(value: unknown): value is Record<"Judith" | "Sanjay" | "Ajay", string> {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		return false;
 	}
@@ -31,18 +29,10 @@ function isSalesRepEmailMap(
 			return false;
 		}
 	}
-
-	const ajayEmail = Reflect.get(value, "Ajay");
-	if (ajayEmail !== undefined && (typeof ajayEmail !== "string" || ajayEmail.trim().length === 0)) {
-		return false;
-	}
-
 	return true;
 }
 
-function parseSalesRepEmailMap(
-	value: string
-): Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>> {
+function parseSalesRepEmailMap(value: string): Record<"Judith" | "Sanjay" | "Ajay", string> {
 	let parsed: unknown;
 
 	try {
@@ -58,15 +48,14 @@ function parseSalesRepEmailMap(
 	return {
 		Judith: parsed.Judith.trim(),
 		Sanjay: parsed.Sanjay.trim(),
-		...(parsed.Ajay ? { Ajay: parsed.Ajay.trim() } : {}),
+		Ajay: parsed.Ajay.trim(),
 	};
 }
 
 const SALE_REP_DESTINATIONS: Record<SalesRepOption, SalesRepEmailKey[]> = {
 	Judith: ["Judith"],
 	Sanjay: ["Sanjay"],
-	// TODO: Add AJAY once verified
-	Ajay: [/*"Ajay"*/ "Sanjay"],
+	Ajay: ["Ajay", "Sanjay"],
 	"New customer": ["Judith", "Sanjay"],
 };
 

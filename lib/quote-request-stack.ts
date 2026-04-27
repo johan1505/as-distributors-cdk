@@ -18,7 +18,7 @@ interface QuoteRequestStackProps extends cdk.StackProps {
 	/**
 	 * Map of sales reps to their configured email addresses.
 	 */
-	saleRepEmailMap: Record<"Judith" | "Sanjay", string> & Partial<Record<"Ajay", string>>;
+	saleRepEmailMap: Record<"Judith" | "Sanjay" | "Ajay", string>;
 
 	/**
 	 * The Route 53 hosted zone for the domain.
