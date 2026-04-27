@@ -5,7 +5,6 @@ export type SalesRepOption = (typeof SALES_REP_OPTIONS)[number];
 export type QuoteItem = {
 	productName: string;
 	itemNumber: string;
-	overallSize: string;
 	quantity: number;
 	variantLabel?: string;
 	variantValue?: string;

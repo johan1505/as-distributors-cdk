@@ -58,9 +58,6 @@ function validatePayload(body: QuoteRequestPayload): string[] {
 			if (!item.productName) {
 				errors.push(`quoteItems[${index}].productName is required`);
 			}
-			if (!item.overallSize) {
-				errors.push(`quoteItems[${index}].overallSize is required`);
-			}
 			if (typeof item.quantity !== "number" || item.quantity < 1) {
 				errors.push(`quoteItems[${index}].quantity must be a positive number`);
 			} else if (item.quantity > MAX_PACKS_PER_QUOTE_ITEM) {

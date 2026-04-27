@@ -99,7 +99,6 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalCasesRequested: numb
     <tr>
       <td style="padding: 8px; border: 1px solid #ddd;">${item.itemNumber}</td>
       <td style="padding: 8px; border: 1px solid #ddd;">${item.productName}</td>
-      <td style="padding: 8px; border: 1px solid #ddd;">${item.overallSize}</td>
       <td style="padding: 8px; border: 1px solid #ddd;">${formatSelection(item)}</td>
       <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
     </tr>
@@ -113,7 +112,6 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalCasesRequested: numb
         <tr style="background-color: #f5f5f5;">
           <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Item #</th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Product</th>
-          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Size</th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Selection</th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Cases</th>
         </tr>
@@ -123,7 +121,7 @@ function formatQuoteItemsHtml(quoteItems: QuoteItem[], totalCasesRequested: numb
       </tbody>
        <tfoot>
         <tr style="background-color: #f5f5f5;">
-          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;" colspan="4"><strong>Total</strong></th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;" colspan="3"><strong>Total</strong></th>
           <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">${totalCasesRequested}</th>
         </tr>
       </tfoot>
@@ -138,9 +136,9 @@ function formatQuoteItemsText(quoteItems: QuoteItem[]): string {
 	return quoteItems
 		.map((item) => {
 			const selection = formatSelection(item);
-			return `- [${item.itemNumber}] ${item.productName} (${item.overallSize}${
-				selection === "Standard" ? "" : `, ${selection}`
-			}): ${item.quantity} case(s)`;
+			return `- [${item.itemNumber}] ${item.productName}${
+				selection === "Standard" ? "" : ` (${selection})`
+			}: ${item.quantity} case(s)`;
 		})
 		.join("\n");
 }
