@@ -52,6 +52,9 @@ export class AmplifyStack extends cdk.Stack {
 version: 1
 frontend:
     phases:
+        preBuild:
+            commands:
+                - 'nvm use 24'
         build:
             commands:
                 - 'npm run deploy'
